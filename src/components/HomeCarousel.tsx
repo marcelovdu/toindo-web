@@ -22,18 +22,17 @@ export function HomeCarousel() {
             <CarouselItem key={slide.id}>
               <div className="bg-slate-800 rounded-xl p-4 lg:p-4">
                 <div className="grid lg:grid-cols-2 gap-8 items-center">
-                  {/* Text Content */}
+                  {/* Texto */}
                   <div className="space-y-4 pl-18">
                     <h1 className="text-2xl text-slate-50 lg:text-3xl font-bold leading-tight text-balance">
                       {slide.title}
                     </h1>
-                    {/* Subtítulo adicionado aqui */}
                     <p className="text-slate-400 lg:text-lg text-balance">
                         {slide.subtitle}
                     </p>
                   </div>
 
-                  {/* Image */}
+                  {/* Imagem */}
                   <div className="relative mr-14">
                      <div className="aspect-[2.35/1] rounded-lg overflow-hidden bg-slate-800">
                         <Image

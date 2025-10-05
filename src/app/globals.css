@@ -166,5 +166,17 @@ html, body, :root{
 }
 
 .filter-trigger-button {
-  height: 100% !important; /* O !important garante que este estilo terá prioridade máxima */
+  height: 100% !important;
+}
+
+/* Loading page */
+.skeleton {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: #374151;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .5;
+  }
 }

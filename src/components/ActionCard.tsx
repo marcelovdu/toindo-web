@@ -1,8 +1,6 @@
-// src/components/ActionCard.tsx
-
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Share2 } from "lucide-react";
@@ -18,22 +16,21 @@ type ActionCardProps = {
 }
 
 export const ActionCard = ({ event, userId, initialIsJoined }: ActionCardProps) => {
-  // useTransition é um hook do React para gerenciar estados de carregamento de ações
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+  
+  const [isSharing, setIsSharing] = useState(false);
 
   const handleJoin = () => {
     if (!userId) {
-      // Redirecionar para o login ou mostrar um aviso
       toast.error("Você precisa estar logado para se inscrever em um evento.");
       return;
     }
-
     startTransition(async () => {
       const result = await toggleRegistration({
         eventId: event._id,
         userId: userId,
-        path: pathname, // Usado para revalidar a página
+        path: pathname,
       });
       if (result?.message) {
         toast.success(result.message);
@@ -41,37 +38,63 @@ export const ActionCard = ({ event, userId, initialIsJoined }: ActionCardProps) 
     });
   };
   
-  // A lógica de compartilhamento permanece a mesma
-  const handleShare = async () => { /* ... */ };
+  const handleShare = async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: event.title,
+          text: `Confira este evento: ${event.title}`,
+          url: `${window.location.origin}/events/${event._id}`,
+        });
+      } catch (error) {
+        console.error("Erro ao compartilhar:", error);
+      } finally {
+        setIsSharing(false);
+      }
+    } else {
+      navigator.clipboard.writeText(`${window.location.origin}/events/${event._id}`);
+      toast.success("Link do evento copiado para a área de transferência!");
+      setIsSharing(false);
+    }
+  };
 
   return (
-    <Card className="bg-gray-800 border-gray-700 rounded-2xl">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center gap-3">
-          {/* O botão agora usa o estado `initialIsJoined` e o `isPending` */}
-          {!initialIsJoined ? (
-            <Button 
-              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold" 
-              onClick={handleJoin}
-              disabled={isPending}
-            >
-              {isPending ? 'Processando...' : 'Participar do Evento'}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              className="flex-1 text-yellow-500 border-yellow-500 bg-transparent hover:bg-yellow-500/10 hover:text-yellow-400"
-              onClick={handleJoin}
-              disabled={isPending}
-            >
-              <Check className="h-4 w-4 mr-2" />
-              {isPending ? 'Cancelando...' : 'Participação Confirmada'}
-            </Button>
-          )}
-          <Button variant="outline" size="icon" onClick={handleShare} className="border-gray-600 hover:bg-gray-700">
-            <Share2 className="h-4 w-4" />
+     <Card className="bg-gray-800 border-gray-700 rounded-2xl">
+      <CardContent className="p-4 md:p-6 flex flex-col gap-4">
+
+        {!initialIsJoined ? (
+          <Button 
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold" 
+            onClick={handleJoin}
+            disabled={isPending}
+          >
+            {isPending ? 'Processando...' : 'Participar do Evento'}
           </Button>
-        </div>
+        ) : (
+          <Button
+            variant="outline"
+            className="w-full text-yellow-500 border-yellow-500 bg-transparent hover:bg-yellow-500/10 hover:text-yellow-400"
+            onClick={handleJoin}
+            disabled={isPending}
+          >
+            <Check className="h-4 w-4 mr-2" />
+            {isPending ? 'Cancelando...' : 'Participação Confirmada'}
+          </Button>
+        )}
+        
+        <Button 
+          variant="outline" 
+          onClick={handleShare} 
+          className="w-full border-gray-600 hover:bg-gray-700" 
+          disabled={isSharing}
+        >
+          <Share2 className="h-4 w-4 mr-2" />
+          {isSharing ? 'Aguarde...' : 'Compartilhar'}
+        </Button>
+        
       </CardContent>
     </Card>
   );

@@ -39,6 +39,25 @@ export type GetRelatedEventsByCategoryParams = {
   page: number | string
 }
 
+export type GetEventsByUserParams = {
+  userId: string;
+  limit?: number;
+  page?: number;
+}
+
+export type GetRegisteredEventsParams = {
+  userId: string;
+  limit?: number;
+  page?: number;
+}
+
+export type ParticipantInfoParams = {
+    _id: string;
+    name: string;
+    email: string;
+};
+
+
 // ====== CATEGORY PARAMS
 export type CreateCategoryParams = {
   categoryName: string
@@ -55,7 +74,6 @@ export type DeleteEventParams = {
   eventId: string
   path: string
 }
-
 
 
 // QUERY PARAMS

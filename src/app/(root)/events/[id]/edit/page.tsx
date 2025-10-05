@@ -3,9 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { getAllCategories } from "@/lib/actions/category.actions"; 
-import { getEventById } from "@/lib/actions/event.actions"; // <-- 1. Importamos a nova action
+import { getEventById } from "@/lib/actions/event.actions";
 
-// Define o tipo das props que a página receberá da URL
 type UpdateEventProps = {
   params: {
     id: string;
@@ -13,16 +12,14 @@ type UpdateEventProps = {
 };
 
 const UpdateEvent = async ({ params: { id } }: UpdateEventProps) => {
-  // Busca a sessão e as categorias, igual na página de criação
+  // Busca a sessão e as categorias
   const session = await getServerSession(authOptions);
   const categories = await getAllCategories();
   
-  // 2. BUSCA OS DADOS DO EVENTO ESPECÍFICO QUE SERÁ EDITADO
+  // Busca os dados do evento a ser editado
   const event = await getEventById(id);
-
   const userId = session?.user?.id;
 
-  // 3. VERIFICAÇÃO DE SEGURANÇA AVANÇADA
   // Redireciona se o usuário não estiver logado OU não for o organizador do evento
   if (!userId || event?.organizer._id.toString() !== userId) {
     redirect("/");

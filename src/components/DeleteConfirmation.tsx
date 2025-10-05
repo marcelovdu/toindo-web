@@ -1,9 +1,6 @@
-// src/components/DeleteConfirmation.tsx
-
 'use client'
 
 import { useTransition } from 'react'
-import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 
 import {
@@ -22,8 +19,7 @@ import { deleteEvent } from '@/lib/actions/event.actions'
 import { Trash2 } from 'lucide-react'
 
 export const DeleteConfirmation = ({ eventId }: { eventId: string }) => {
-  const pathname = usePathname()
-  const router = useRouter() // -> 2. Inicializamos o router
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
   return (
@@ -50,10 +46,8 @@ export const DeleteConfirmation = ({ eventId }: { eventId: string }) => {
           <AlertDialogAction
             onClick={() =>
               startTransition(async () => {
-                // A Server Action é executada primeiro
                 await deleteEvent({ eventId }) 
 
-                // -> 3. Após o sucesso, redirecionamos o usuário
                 router.push('/explore-events')
               })
             }

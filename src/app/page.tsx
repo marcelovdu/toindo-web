@@ -7,8 +7,21 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Loader } from "lucide-react";
 
+const FullScreenLoader = () => (
+  <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col items-center justify-center bg-gray-900">
+    <Loader className="h-12 w-12 animate-spin text-azul-2" />
+    <p className="mt-4 text-lg font-semibold text-white">
+      Ajustando a rota para sua próxima aventura...
+    </p>
+  </div>
+);
+
 const Home = () => {
   const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return <FullScreenLoader />;
+  }
 
   return (
     <>
@@ -19,13 +32,7 @@ const Home = () => {
             <p className="p-regular-20 md:p-regular-24 text-slate-400">Faça a sua comunidade vibrar. Marque eventos casuais, conecte-se com outras pessoas e una aqueles com interesse em comum.</p>
             
             <nav>
-              {status === "loading" ? (
-                // Botão desabilitado com loader enquanto a sessão carrega
-                <Button size="lg" disabled className="button w-full sm:w-fit bg-azul-2/80">
-                  <Loader className="animate-spin mr-2" />
-                  Aguarde...
-                </Button>
-              ) : session ? (
+              {session ? (
                 // Botão para o usuário LOGADO
                 <Button size="lg" asChild className="button w-full sm:w-fit bg-azul-2 hover:bg-azul-1">
                   <Link href="/home">

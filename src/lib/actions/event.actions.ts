@@ -13,7 +13,10 @@ import {
   CreateEventParams,
   UpdateEventParams,
   GetAllEventsParams,
-  GetRelatedEventsByCategoryParams
+  GetRelatedEventsByCategoryParams,
+  GetEventsByUserParams,
+  GetRegisteredEventsParams,
+  ParticipantInfoParams
 } from '@/types/index'
 
 
@@ -24,7 +27,7 @@ const getCategoryByName = async (name: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const populateEvent = (query: any) => {
   return query
-    .populate({ path: 'organizer', model: User, select: '_id firstName lastName' })
+    .populate({ path: 'organizer', model: User, select: '_id name' })
     .populate({ path: 'category', model: Category, select: '_id name' })
 }
 
@@ -44,6 +47,7 @@ export async function createEvent({ userId, event, path }: CreateEventParams) {
     handleError(error)
   }
 }
+
 
 // UPDATE
 export async function updateEvent({ userId, event, path }: UpdateEventParams) {
@@ -68,19 +72,19 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
   }
 }
 
+
 // DELETE
 export async function deleteEvent({ eventId }: { eventId: string }) {
   try {
     await connectToDatabase()
 
-    // 1. Deletar todas as inscrições (registrations) associadas ao evento
-    // Isso garante que não fiquem dados "órfãos" no banco de dados.
+    // Deleta todas as inscrições (registrations) associadas ao evento
     await Registration.deleteMany({ event: eventId });
 
-    // 2. Deletar o evento em si
+    // Deleta o evento em si
     const deletedEvent = await Event.findByIdAndDelete(eventId)
     
-    // 3. Revalidar os caminhos para atualizar a UI
+    // Revalidar os caminhos para atualizar a UI
     if (deletedEvent) {
       revalidatePath('/explore-events')
       revalidatePath('/') 
@@ -89,6 +93,7 @@ export async function deleteEvent({ eventId }: { eventId: string }) {
     handleError(error)
   }
 }
+
 
 // GET ONE EVENT BY ID
 export async function getEventById(eventId: string) {
@@ -103,17 +108,16 @@ export async function getEventById(eventId: string) {
       return null;
     }
 
-    // -> NOVO: Contamos as inscrições para este evento
     const participantCount = await Registration.countDocuments({ event: event._id });
     
     const eventObject = JSON.parse(JSON.stringify(event));
 
-    // -> NOVO: Adicionamos a contagem ao objeto que retornamos
     return { ...eventObject, participantCount };
   } catch (error) {
     handleError(error);
   }
 }
+
 
 // GET ALL EVENTS
 export async function getAllEvents({ query, limit = 6, page, category }: GetAllEventsParams) {
@@ -125,24 +129,28 @@ export async function getAllEvents({ query, limit = 6, page, category }: GetAllE
     const conditions = {
       $and: [titleCondition, categoryCondition ? { category: categoryCondition._id } : {}],
     }
-
     const skipAmount = (Number(page) - 1) * limit
     const eventsQuery = Event.find(conditions)
       .sort({ createdAt: 'desc' })
       .skip(skipAmount)
       .limit(limit)
-
     const events = await populateEvent(eventsQuery)
     const eventsCount = await Event.countDocuments(conditions)
 
+    const eventsWithCount = await Promise.all(events.map(async (event: IEvent) => {
+      const participantCount = await Registration.countDocuments({ event: event._id });
+      return { ...event.toObject(), participantCount };
+    }));
+
     return {
-      data: JSON.parse(JSON.stringify(events)),
+      data: JSON.parse(JSON.stringify(eventsWithCount)),
       totalPages: Math.ceil(eventsCount / limit),
     }
   } catch (error) {
     handleError(error)
   }
 }
+
 
 // GET RELATED EVENTS: EVENTS WITH SAME CATEGORY
 export async function getRelatedEventsByCategory({
@@ -157,33 +165,27 @@ export async function getRelatedEventsByCategory({
     const skipAmount = (Number(page) - 1) * limit;
     const conditions = { $and: [{ category: categoryId }, { _id: { $ne: eventId } }] };
 
-    // -> 1. ADICIONAMOS .lean() AQUI!
-    // Isso faz com que a consulta retorne objetos JS puros, mais leves e rápidos.
+
     const eventsQuery = Event.find(conditions)
       .sort({ createdAt: 'desc' })
       .skip(skipAmount)
       .limit(limit)
-      .lean(); // Adicionado .lean()
+      .lean(); 
 
     const eventsCount = await Event.countDocuments(conditions);
 
-    // A sua função populateEvent não é mais necessária aqui,
-    // pois faremos o populate manualmente de forma mais controlada.
-    // Vamos popular o organizador e a categoria manualmente após o lean.
     const populatedEvents = await Event.populate(await eventsQuery, [
         { path: 'organizer', model: 'User', select: '_id name' },
         { path: 'category', model: 'Category', select: '_id name' }
     ]);
 
-    // -> 2. Agora o 'event' já é um objeto simples, então o spread é seguro.
     const eventsWithParticipantCount = await Promise.all(
-      populatedEvents.map(async (event) => { // Removido o tipo IEvent daqui
+      populatedEvents.map(async (event) => {
         const participantCount = await Registration.countDocuments({ event: event._id });
         return { ...event, participantCount };
       })
     );
 
-    // -> 3. Retornamos o novo array. O JSON.parse/stringify ainda é uma boa prática aqui.
     return {
       data: JSON.parse(JSON.stringify(eventsWithParticipantCount)),
       totalPages: Math.ceil(eventsCount / limit),
@@ -191,5 +193,97 @@ export async function getRelatedEventsByCategory({
   } catch (error) {
     handleError(error);
   }
+}
+
+
+// GET EVENTS BY USER (ORGANIZED_EVENTS) 
+export async function getEventsByUser({ userId, limit = 6, page = 1 }: GetEventsByUserParams) {
+  try {
+    await connectToDatabase()
+
+    const conditions = { organizer: userId }
+    const skipAmount = (page - 1) * limit
+    const eventsQuery = Event.find(conditions)
+      .sort({ createdAt: 'desc' })
+      .skip(skipAmount)
+      .limit(limit)
+    const events = await populateEvent(eventsQuery)
+    const eventsCount = await Event.countDocuments(conditions)
+
+    const eventsWithCount = await Promise.all(events.map(async (event: IEvent) => {
+      const participantCount = await Registration.countDocuments({ event: event._id });
+      return { ...event.toObject(), participantCount };
+    }));
+
+    return { data: JSON.parse(JSON.stringify(eventsWithCount)), totalPages: Math.ceil(eventsCount / limit) }
+  } catch (error) {
+    handleError(error)
+  }
+}
+
+
+// GET EVENTS BY REGISTRATION (PARTICIPATED_EVENTS)
+export async function getRegisteredEvents({ userId, limit = 6, page = 1 }: GetRegisteredEventsParams) {
+  try {
+    await connectToDatabase()
+
+    const userRegistrations = await Registration.find({ user: userId }).select('event');
+    const eventIds = userRegistrations.map(reg => reg.event);
+    const conditions = { _id: { $in: eventIds } };
+    const skipAmount = (page - 1) * limit
+    const eventsQuery = Event.find(conditions)
+      .sort({ createdAt: 'desc' })
+      .skip(skipAmount)
+      .limit(limit)
+    const events = await populateEvent(eventsQuery)
+    const eventsCount = await Event.countDocuments(conditions)
+
+    const eventsWithCount = await Promise.all(events.map(async (event: IEvent) => {
+      const participantCount = await Registration.countDocuments({ event: event._id });
+      return { ...event.toObject(), participantCount };
+    }));
+
+    return { data: JSON.parse(JSON.stringify(eventsWithCount)), totalPages: Math.ceil(eventsCount / limit) }
+  } catch (error) {
+    handleError(error)
+  }
+}
+
+
+export async function getEventParticipants(eventId: string): Promise<ParticipantInfoParams[]> {
+    try {
+        await connectToDatabase();
+
+        // Busca todos os documentos de inscrição para este evento.
+        const registrations = await Registration.find({ event: eventId })
+            .populate({
+                path: 'user',
+                model: User,
+                select: '_id name email', 
+            })
+            .lean();
+
+        // Mapeia o resultado para extrair apenas a informação do usuário.
+        const participants: ParticipantInfoParams[] = registrations
+            .map(reg => {
+                const user = reg.user as { _id: object, name: string, email: string };
+                
+                if (!user) return null;
+
+                return {
+                    _id: user._id.toString(), 
+                    name: user.name,
+                    email: user.email,
+                };
+            })
+            // Remove registros nulos e garante que a tipagem final está correta
+            .filter((user): user is ParticipantInfoParams => user !== null); 
+        
+        return participants;
+
+    } catch (error) {
+        console.error("ERRO ao buscar participantes:", error);
+        throw new Error("Falha ao carregar a lista de participantes.");
+    }
 }
 

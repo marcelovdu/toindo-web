@@ -1,5 +1,3 @@
-// Em src/app/api/seed/route.ts
-
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/mongodb';
@@ -20,7 +18,6 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 export async function GET() {
-  // Medida de segurança: Garante que esta rota só funcione em ambiente de desenvolvimento
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json(
       { error: 'Esta rota é permitida apenas em ambiente de desenvolvimento.' },
@@ -46,7 +43,7 @@ export async function GET() {
     }
 
     console.log('API de Seed: Seeding concluído.');
-    await mongoose.disconnect(); // Opcional, mas bom para fechar a conexão
+    await mongoose.disconnect();
 
     return NextResponse.json({
       message: 'Seeding de categorias concluído com sucesso!',

@@ -14,6 +14,8 @@ const CreateEvent = async () => {
   const userId = session.user.id;
   const categories = await getAllCategories();
 
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   return (
     <>
     <div className="wrapper my-8">

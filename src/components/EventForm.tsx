@@ -68,7 +68,6 @@ const initialValues = type === 'Update' && event
   ? { 
       ...event, 
       startDateTime: new Date(event.startDateTime),
-      // Mapeia o ID da categoria que vem do DB para o campo 'category' do formulário
       category: event.category._id 
     }
   : { // Valores padrão para o modo 'Create'
@@ -85,7 +84,6 @@ const initialValues = type === 'Update' && event
 
 const form = useForm<z.infer<typeof eventFormSchema>>({
   resolver: zodResolver(eventFormSchema),
-  // Use a variável de valores iniciais aqui
   defaultValues: initialValues,
   shouldUnregister: false,
 });
@@ -118,7 +116,6 @@ const form = useForm<z.infer<typeof eventFormSchema>>({
       const currentValues = form.getValues();
       setFormData(prevData => ({ ...prevData, ...currentValues }));
       if (currentStep === 5) {
-        //await handleSubmitFinal({ ...formData, ...currentValues });
         await handleSubmitFinal();
       } else if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
@@ -147,7 +144,6 @@ const handleSubmitFinal = async () => {
     imageUrl: finalData.imageUrl || defaultEventImageUrl,
   };
 
-  // --- LÓGICA CONDICIONAL ADICIONADA AQUI ---
   if (type === 'Create') {
     try {
       const newEvent = await createEvent({
@@ -168,7 +164,6 @@ const handleSubmitFinal = async () => {
 
   if (type === 'Update') {
     if (!eventId) {
-      // Segurança: se não houver eventId, não faz nada e volta
       setIsSubmitting(false);
       return;
     }
@@ -190,7 +185,7 @@ const handleSubmitFinal = async () => {
     }
   }
 
-  setIsSubmitting(false); // Movido para fora para executar em ambos os casos
+  setIsSubmitting(false);
 };
 
   // Mensagem que visualiza a construção do objeto no console
@@ -249,15 +244,13 @@ const handleSubmitFinal = async () => {
                         onValueChange={field.onChange}
                         className="grid grid-cols-5 gap-3"
                       >
-                        {/* Mapeia as categorias que vêm do BANCO DE DADOS (via props) */}
                         {categories.map((category) => {
-                          // Procura o ícone correspondente no nosso mapa
-                          const IconComponent = iconMap[category.name] || Sparkles; // Usa Sparkles como fallback
+                          const IconComponent = iconMap[category.name] || Sparkles;
 
                           return (
                             <ToggleGroupItem
                               key={category._id}
-                              value={category._id} // <-- O VALOR É O _ID DO BANCO DE DADOS!
+                              value={category._id}
                               className="flex flex-col items-center justify-center gap-2 h-20 w-24 data-[state=on]:bg-emerald-100 data-[state=on]:text-emerald-700 data-[state=on]:border-emerald-300"
                             >
                               <IconComponent className="h-5 w-5" />
@@ -487,7 +480,6 @@ case 4:
             </Card>
           )     
 
-      // Dentro da função renderStepContent()
 
 case 6:
   return (
@@ -535,7 +527,6 @@ return (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-2xl font-bold text-slate-50">
-                {/* --- MUDANÇA 1: Título dinâmico --- */}
                 {type === 'Create' ? 'Criar Evento' : 'Atualizar Evento'}
               </h1>
               <span className="text-sm text-white">Passo {currentStep} de 5</span>
@@ -552,7 +543,6 @@ return (
               Voltar
             </Button>
             <Button className="bg-white text-black hover:bg-black hover:text-white" onClick={handleNext} disabled={isSubmitting}>
-              {/* --- MUDANÇA 2: Texto do botão dinâmico --- */}
               {isSubmitting ? 'Enviando...' : (currentStep === 5 ? (type === 'Create' ? 'Publicar Evento' : 'Atualizar Evento') : 'Avançar')}
             </Button>
           </div>

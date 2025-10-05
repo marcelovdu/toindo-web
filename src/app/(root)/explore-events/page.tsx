@@ -3,8 +3,13 @@ import Collection from '@/components/Collection'
 import Search from '@/components/Search';
 import { getAllEvents } from '@/lib/actions/event.actions';
 import { SearchParamProps } from '@/types';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export default async function Home({ searchParams }: SearchParamProps) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+  
   const resolvedSearchParams = await searchParams;
 
   const page = Number(resolvedSearchParams?.page) || 1;
@@ -36,6 +41,7 @@ export default async function Home({ searchParams }: SearchParamProps) {
           limit={9}  // Para mudar a quantidade de cards na pagina
           page={page}
           totalPages={events?.totalPages}
+          userId={userId}
         />
       </section>
     </>

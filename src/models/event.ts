@@ -14,6 +14,7 @@ export interface IEvent extends Document {
   capacity?: number;
   category: { _id: string, name: string }
   organizer: { _id: string, name: string }
+  participantCount: number;
 }
 
 const EventSchema = new Schema({

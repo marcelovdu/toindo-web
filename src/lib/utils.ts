@@ -3,14 +3,17 @@ import { twMerge } from "tailwind-merge"
 import { UrlQueryParams, RemoveUrlQueryParams } from '@/types'
 import qs from 'query-string'
 
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
 
 export const handleError = (error: unknown) => {
   console.error(error)
   throw new Error(typeof error === 'string' ? error : JSON.stringify(error))
 }
+
 
 export const formatDateTime = (dateString: Date) => {
   // Converte a string de data para um objeto Date
@@ -23,7 +26,7 @@ export const formatDateTime = (dateString: Date) => {
     day: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
-    hour12: false, // -> Corrigido para formato 24h
+    hour12: false, // formato 24h
   };
 
   // Opções apenas para a data (ex: 29/09/2025)
@@ -37,21 +40,21 @@ export const formatDateTime = (dateString: Date) => {
   const timeOptions: Intl.DateTimeFormatOptions = {
     hour: 'numeric',
     minute: 'numeric',
-    hour12: false, // -> Corrigido para formato 24h
+    hour12: false, // formato 24h
   };
 
-  // -> Adicionado 'pt-BR' para formatar corretamente para o Brasil
+  // 'pt-BR' para formatar corretamente para o Brasil
   const formattedDateTime = new Intl.DateTimeFormat('pt-BR', dateTimeOptions).format(dateObject);
   const formattedDateOnly = new Intl.DateTimeFormat('pt-BR', dateOptions).format(dateObject);
   const formattedTimeOnly = new Intl.DateTimeFormat('pt-BR', timeOptions).format(dateObject);
 
-  // -> A função agora retorna um objeto com as strings formatadas
   return {
     dateTime: formattedDateTime,
     dateOnly: formattedDateOnly,
     timeOnly: formattedTimeOnly,
   };
 };
+
 
 export function formUrlQuery({ params, key, value }: UrlQueryParams) {
   const currentUrl = qs.parse(params)
@@ -66,6 +69,7 @@ export function formUrlQuery({ params, key, value }: UrlQueryParams) {
     { skipNull: true }
   )
 }
+
 
 export function removeKeysFromQuery({ params, keysToRemove }: RemoveUrlQueryParams) {
   const currentUrl = qs.parse(params)
@@ -82,3 +86,95 @@ export function removeKeysFromQuery({ params, keysToRemove }: RemoveUrlQueryPara
     { skipNull: true }
   )
 }
+
+
+export const formatUserName = (user: { name?: string | null }): string => {
+  if (!user || !user.name) {
+    return 'Organizador Anônimo';
+  }
+  return user.name;
+};
+
+
+export const formatOrganizerName = (name?: string | null): string => {
+  if (!name || name.trim() === '') {
+    return 'Organizador';
+  }
+
+  // Limpa, separa e capitaliza todas as palavras do nome
+  const words = name
+    .toLowerCase()
+    .split(' ')
+    .filter(word => word.length > 0)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1));
+
+  // Se o nome tem apenas uma palavra
+  if (words.length === 1) {
+    return words[0].slice(0, 16);
+  }
+
+  const firstName = words[0];
+  const secondName = words[1];
+  
+  // Tenta usar os dois primeiros nomes
+  const twoFirstNames = `${firstName} ${secondName}`;
+  if (twoFirstNames.length <= 16) {
+    return twoFirstNames;
+  }
+
+  // Se os dois primeiros nomes são muito longos, trunca o segundo
+  const truncatedSecondName = `${secondName.charAt(0)}.`;
+  const finalName = `${firstName} ${truncatedSecondName}`;
+  
+  return finalName.slice(0, 16);
+};
+
+
+export const formatEventStatus = (startDateTime: Date) => {
+  const now = new Date();
+  const eventDate = new Date(startDateTime);
+
+  if (eventDate < now) {
+    return { text: 'Evento Concluído', color: 'text-gray-500' };
+  }
+
+  const diffInMillis = eventDate.getTime() - now.getTime();
+  const diffInHours = Math.ceil(diffInMillis / (1000 * 60 * 60));
+  const diffInDays = Math.ceil(diffInHours / 24);
+
+  if (diffInHours < 24) {
+    return { 
+      text: `Inicia em ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`, 
+      color: 'text-orange-500' 
+    };
+  } else {
+    return { 
+      text: `Inicia em ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`, 
+      color: 'text-yellow-400' 
+    };
+  }
+};
+
+
+export const formatFullDateTime = (dateString: Date) => {
+  const date = new Date(dateString);
+
+  // Formata a data completa
+  const datePart = new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+
+  // Formata apenas a hora
+  const timePart = new Intl.DateTimeFormat('pt-BR', {
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  }).format(date);
+
+  const finalString = `${datePart}, ${timePart}`;
+  
+  return finalString.charAt(0).toUpperCase() + finalString.slice(1);
+};
