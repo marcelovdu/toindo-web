@@ -11,6 +11,11 @@ import { MapPin, Ticket, ExternalLink, Crown, CalendarDays  } from 'lucide-react
 // Tipos necessários
 import { IEvent } from '@/models/event';
 import { ParticipantsModal } from './ParticipantsModal';
+import { IInvitation } from '@/models/invitation';
+import { InvitationsModal } from './InvitationsModal';
+
+type UnifiedParticipant = { _id: string; name: string; status: 'confirmed' | 'pending'; };
+
 
 const DEFAULT_EVENT_IMAGE = '/images/default-event.png'; 
 
@@ -21,7 +26,9 @@ type OrganizerEventViewProps = {
   isEventCreator: boolean;
   initialIsJoined: boolean;
   relatedEvents: { data: IEvent[], totalPages: number };
-  searchParams: { [key: string]: string | string[] | undefined };
+  invitations: IInvitation[];
+  participantsList: UnifiedParticipant[];
+  page: string; 
 }
 
 export const OrganizerEventView = ({
@@ -30,7 +37,9 @@ export const OrganizerEventView = ({
   isEventCreator,
   initialIsJoined,
   relatedEvents,
-  searchParams,
+  invitations,
+  participantsList,
+  page
 }: OrganizerEventViewProps) => {
 
   // Toda a lógica de formatação de dados
@@ -102,7 +111,7 @@ export const OrganizerEventView = ({
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-6">
                 {isEventCreator ? (
-                  <OrganizerActionCard event={event} />
+                  <OrganizerActionCard event={event} userId={userId} />
                 ) : (
                   userId && (
                     <ActionCard 
@@ -120,7 +129,12 @@ export const OrganizerEventView = ({
                       participantCount={participantCount}
                       attendancePercentage={attendancePercentage}
                       capacity={capacity}
+                      participantsList={participantsList}
                   />
+                )}
+
+                 {isEventCreator && userId && (
+                 <InvitationsModal eventId={event._id} invitations={invitations} />
                 )}
 
               </div>
@@ -138,7 +152,7 @@ export const OrganizerEventView = ({
           emptyStateSubtext="Verifique novamente mais tarde"
           collectionType="All_Events"
           limit={3}
-          page={searchParams.page as string}
+          page={page}
           totalPages={relatedEvents?.totalPages}
         />
       </section>

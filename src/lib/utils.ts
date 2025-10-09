@@ -9,9 +9,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 
-export const handleError = (error: unknown) => {
-  console.error(error)
-  throw new Error(typeof error === 'string' ? error : JSON.stringify(error))
+export const handleError = (error: unknown): string => {
+  console.error(error);
+  
+  if (error instanceof Error) {
+    // Se for um objeto de Erro, retorna a mensagem dele
+    return error.message;
+  } 
+  if (typeof error === 'string') {
+    // Se já for uma string, retorna a própria string
+    return error;
+  }
+  // Como último recurso, retorna uma mensagem genérica
+  return 'Ocorreu um erro desconhecido.';
 }
 
 

@@ -8,6 +8,7 @@ import User from '@/models/user'
 import { handleError } from '@/lib/utils'
 import Category from '@/models/category'
 import Registration from '@/models/registration'
+import Invitation from '@/models/invitation'
 
 import {
   CreateEventParams,
@@ -108,7 +109,12 @@ export async function getEventById(eventId: string) {
       return null;
     }
 
-    const participantCount = await Registration.countDocuments({ event: event._id });
+    const registrationCount = await Registration.countDocuments({ event: event._id });
+    const pendingInvitationCount = await Invitation.countDocuments({ 
+      event: event._id, 
+      status: 'pending' 
+    });
+    const participantCount = registrationCount + pendingInvitationCount;
     
     const eventObject = JSON.parse(JSON.stringify(event));
 
@@ -138,7 +144,12 @@ export async function getAllEvents({ query, limit = 6, page, category }: GetAllE
     const eventsCount = await Event.countDocuments(conditions)
 
     const eventsWithCount = await Promise.all(events.map(async (event: IEvent) => {
-      const participantCount = await Registration.countDocuments({ event: event._id });
+    const registrationCount = await Registration.countDocuments({ event: event._id });
+    const pendingInvitationCount = await Invitation.countDocuments({ 
+      event: event._id, 
+      status: 'pending' 
+    });
+    const participantCount = registrationCount + pendingInvitationCount;
       return { ...event.toObject(), participantCount };
     }));
 
@@ -181,7 +192,12 @@ export async function getRelatedEventsByCategory({
 
     const eventsWithParticipantCount = await Promise.all(
       populatedEvents.map(async (event) => {
-        const participantCount = await Registration.countDocuments({ event: event._id });
+        const registrationCount = await Registration.countDocuments({ event: event._id });
+        const pendingInvitationCount = await Invitation.countDocuments({ 
+          event: event._id, 
+          status: 'pending' 
+        });
+        const participantCount = registrationCount + pendingInvitationCount;
         return { ...event, participantCount };
       })
     );
@@ -211,7 +227,12 @@ export async function getEventsByUser({ userId, limit = 6, page = 1 }: GetEvents
     const eventsCount = await Event.countDocuments(conditions)
 
     const eventsWithCount = await Promise.all(events.map(async (event: IEvent) => {
-      const participantCount = await Registration.countDocuments({ event: event._id });
+    const registrationCount = await Registration.countDocuments({ event: event._id });
+    const pendingInvitationCount = await Invitation.countDocuments({ 
+      event: event._id, 
+      status: 'pending' 
+    });
+    const participantCount = registrationCount + pendingInvitationCount;
       return { ...event.toObject(), participantCount };
     }));
 
@@ -239,7 +260,12 @@ export async function getRegisteredEvents({ userId, limit = 6, page = 1 }: GetRe
     const eventsCount = await Event.countDocuments(conditions)
 
     const eventsWithCount = await Promise.all(events.map(async (event: IEvent) => {
-      const participantCount = await Registration.countDocuments({ event: event._id });
+    const registrationCount = await Registration.countDocuments({ event: event._id });
+    const pendingInvitationCount = await Invitation.countDocuments({ 
+      event: event._id, 
+      status: 'pending' 
+    });
+    const participantCount = registrationCount + pendingInvitationCount;
       return { ...event.toObject(), participantCount };
     }));
 
@@ -264,19 +290,28 @@ export async function getEventParticipants(eventId: string): Promise<Participant
             .lean();
 
         // Mapeia o resultado para extrair apenas a informação do usuário.
-        const participants: ParticipantInfoParams[] = registrations
+      const participants: ParticipantInfoParams[] = registrations
             .map(reg => {
-                const user = reg.user as { _id: object, name: string, email: string };
-                
-                if (!user) return null;
+                if (reg.user) {
+                    const user = reg.user as { _id: object, name: string, email: string };
+                    
+                    if (!user) return null;
 
-                return {
-                    _id: user._id.toString(), 
-                    name: user.name,
-                    email: user.email,
-                };
+                    return {
+                        _id: String(user._id), 
+                        name: user.name,
+                        email: user.email,
+                    };
+                } 
+                else if (reg.guestIdentifier) {
+                    return {
+                        _id: String(reg._id), 
+                        name: reg.guestIdentifier,
+                        email: 'Convidado@gmail.com',
+                    };
+                }
+                return null;
             })
-            // Remove registros nulos e garante que a tipagem final está correta
             .filter((user): user is ParticipantInfoParams => user !== null); 
         
         return participants;

@@ -1,17 +1,22 @@
-import React from 'react';
+'use client';
 
 // Imports
+import React, { useState, useTransition, useEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import Collection from '@/components/Collection';
 import { ActionCard } from "@/components/ActionCard";
 import { OrganizerActionCard } from "@/components/OrganizerActionCard";
 import { formatEventStatus, formatOrganizerName, formatFullDateTime } from '@/lib/utils';
-import Image from 'next/image';
-import { MapPin, Ticket, ExternalLink, Crown, CalendarDays  } from 'lucide-react'; 
-
-// Tipos necessários
+import { MapPin, Ticket, ExternalLink, Crown, CalendarDays, Check, XCircle } from 'lucide-react'; 
 import { IEvent } from '@/models/event';
+import { IInvitation } from '@/models/invitation';
+import { respondToInvitation } from '@/lib/actions/invitation.actions';
+import { toast } from 'sonner';
+
 
 const DEFAULT_EVENT_IMAGE = '/images/default-event.png'; 
 
@@ -23,6 +28,8 @@ type VisitorEventViewProps = {
   initialIsJoined: boolean;
   relatedEvents: { data: IEvent[], totalPages: number };
   searchParams: { [key: string]: string | string[] | undefined };
+  invitation?: IInvitation | null;
+  inviteError?: string | null;
 }
 
 export const VisitorEventView = ({
@@ -32,7 +39,14 @@ export const VisitorEventView = ({
   initialIsJoined,
   relatedEvents,
   searchParams,
+  invitation,
+  inviteError 
 }: VisitorEventViewProps) => {
+
+  const [isPending, startTransition] = useTransition();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [invitationStatus, setInvitationStatus] = useState(invitation?.status);
 
   const currentPage = searchParams.page; 
 
@@ -43,6 +57,38 @@ export const VisitorEventView = ({
   const attendancePercentage = hasCapacity ? (participantCount / capacity) * 100 : 0;
 
   const eventStatus = formatEventStatus(event.startDateTime);
+
+  const handleRespond = (response: 'accepted' | 'denied') => {
+    startTransition(async () => {
+      if (!invitation?.token) return;
+      const result = await respondToInvitation({
+        token: invitation.token,
+        response,
+        path: pathname,
+      });
+
+    if (result.success) {
+        toast.success(result.message);
+        if (response === 'accepted') {
+          setInvitationStatus('accepted');
+        } else {
+          setInvitationStatus('denied');
+        }
+      } else {
+        toast.error(result.message || 'Ocorreu um erro.');
+        router.replace(`/events/${event._id}`);
+      }
+    });
+  };
+
+   const toastShownRef = useRef(false);
+
+  useEffect(() => {
+    if (inviteError && !toastShownRef.current) {
+      toast.error(inviteError);
+      toastShownRef.current = true;
+    }
+  }, [inviteError]);
 
   return (
     <>
@@ -103,17 +149,48 @@ export const VisitorEventView = ({
             {/* --- COLUNA DA DIREITA (Sidebar) --- */}
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-6">
-                {isEventCreator ? (
-                  <OrganizerActionCard event={event} />
+
+
+                {invitation && invitationStatus === 'pending' ? (
+                  // Se for um CONVIDADO com um convite pendente, mostra o card de convite
+                  <Card className="bg-gray-800 border-yellow-500 rounded-2xl">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-white">Você foi convidado(a)!</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                      <p className="text-sm text-gray-300">
+                        {formatOrganizerName(invitation.event.organizer.name)} te convidou para este evento.
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        <Button onClick={() => handleRespond('accepted')} disabled={isPending} className="bg-green-600 hover:bg-green-700">
+                          {isPending ? 'Processando...' : 'Aceitar Convite'}
+                        </Button>
+                        <Button onClick={() => handleRespond('denied')} disabled={isPending} variant="destructive">
+                          Recusar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  userId && (
-                    <ActionCard 
-                      event={event} 
-                      userId={userId} 
-                      initialIsJoined={initialIsJoined} 
-                    />
-                  )
+                  // Se for a VISÃO NORMAL (usuário logado, visitante comum, ou convite já respondido)
+                  <>
+                    {invitationStatus === 'accepted' ? (
+                      <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-green-900/50 border border-green-500 text-green-400 font-bold">
+                        <Check className="h-5 w-5" />
+                        <span>Convite Aceito!</span>
+                      </div>
+                    ) : invitationStatus === 'denied' ? (
+                      <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-red-900/50 border border-red-500 text-red-400 font-bold">
+                        <XCircle className="h-5 w-5" />
+                        <span>Convite Recusado</span>
+                      </div>
+                    ) : (
+                      isEventCreator ? ( <OrganizerActionCard event={event} /> ) 
+                      : ( userId && <ActionCard event={event} userId={userId} initialIsJoined={initialIsJoined} /> )
+                    )}
+                </>
                 )}
+
 
                 {hasCapacity && (
                   <Card className="bg-gray-800 border-gray-700 rounded-2xl">
@@ -134,19 +211,13 @@ export const VisitorEventView = ({
         </div>
       </section>
 
-      {/* --- Seção de Eventos Relacionados --- */}
-      <section className="wrapper my-8 flex flex-col gap-8 md:gap-12">
-        <h2 className="text-3xl font-bold text-white">Eventos Relacionados</h2>
-        <Collection 
-          data={relatedEvents?.data}
-          emptyTitle="Nenhum evento relacionado encontrado"
-          emptyStateSubtext="Verifique novamente mais tarde"
-          collectionType="All_Events"
-          limit={3}
-          page={currentPage as string}
-          totalPages={relatedEvents?.totalPages}
-        />
-      </section>
+      {/* Seção de Eventos Relacionados */}
+      {!invitation && (
+        <section className="wrapper my-8 flex flex-col gap-8 md:gap-12">
+          <h2 className="text-3xl font-bold text-white">Eventos Relacionados</h2>
+          <Collection data={relatedEvents?.data} emptyTitle="Nenhum evento relacionado encontrado" emptyStateSubtext="Verifique novamente mais tarde" collectionType="All_Events" limit={3} page={currentPage as string} totalPages={relatedEvents?.totalPages} />
+        </section>
+      )}
     </>
   )
 }

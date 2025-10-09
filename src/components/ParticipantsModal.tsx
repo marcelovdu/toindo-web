@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Users, User, X } from 'lucide-react';
+import { Loader2, Users, User, X, Mail, Clock } from 'lucide-react';
 import { Progress } from './ui/progress' 
 import { getEventParticipants } from '@/lib/actions/event.actions';
 import { ParticipantInfoParams } from '@/types/index'; 
+import { getEventRegistrationsAndInvitations } from '@/lib/actions/invitation.actions';
+
 
 // Tipagem de Props
 type ParticipantsModalProps = {
@@ -16,7 +18,14 @@ type ParticipantsModalProps = {
     participantCount: number;
     attendancePercentage: number;
     capacity: number;
+    participantsList: UnifiedParticipant[];
 }
+
+type UnifiedParticipant = {
+  _id: string;
+  name: string;
+  status: 'confirmed' | 'pending';
+};
 
 export const ParticipantsModal = ({ 
     eventId, 
@@ -24,11 +33,13 @@ export const ParticipantsModal = ({
     participantCount,
     attendancePercentage,
     capacity,
+    participantsList
 }: ParticipantsModalProps) => {
 
     const [isOpen, setIsOpen] = useState(false);
 
     // Armazena a lista de usuários
+     const [list, setList] = useState<UnifiedParticipant[] | null>(null);
     const [participants, setParticipants] = useState<ParticipantInfoParams[] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
@@ -42,9 +53,9 @@ export const ParticipantsModal = ({
 
         if (open && !hasLoaded) {
             setIsLoading(true);
-            getEventParticipants(eventId)
+            getEventRegistrationsAndInvitations(eventId)
                 .then((data) => {
-                    setParticipants(data);
+                    setList(data);
                     setHasLoaded(true);
                 })
                 .catch(error => {
@@ -73,53 +84,43 @@ export const ParticipantsModal = ({
     );
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <div onClick={() => handleOpenChange(true)}> 
+ <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <div onClick={() => setIsOpen(true)}> 
                 {TriggerCard}
             </div>
             
             <DialogContent className="sm:max-w-md bg-gray-900/90 border-gray-700 text-white backdrop-blur-sm">
-                
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Users className="h-6 w-6 text-yellow-500" />
                         Lista de Participantes
                     </DialogTitle>
                     <DialogDescription className="text-gray-400">
-                        {isLoading 
-                            ? "Carregando lista de inscritos..."
-                            : `${descriptionCount} pessoa(s) ${descriptionCount === 1 ? 'está' : 'estão'} confirmada(s) para "${title}".`
-                        }
+                        {`${participantCount} vaga(s) ocupada(s) para "${title}".`}
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* Área de rolagem para a lista de usuários */}
                 <div className="max-h-80 overflow-y-auto space-y-3 p-2 pr-4 custom-scrollbar">
-                    {isLoading && (
-                        <div className="flex justify-center py-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-yellow-500" />
-                        </div>
-                    )}
-
-                    {/* Exibição da lista, após o carregamento */}
-                    {!isLoading && participants && participants.length > 0 && (
-                        participants.map(user => (
-                            <div key={user._id} className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+                    {participantsList && participantsList.length > 0 ? (
+                        participantsList.map(item => (
+                            <div key={item._id} className={`flex items-center gap-3 p-3 bg-gray-800 rounded-lg ${item.status === 'pending' && 'opacity-50'}`}>
                                 <div className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-700 flex-shrink-0">
-                                    <User className="h-5 w-5 text-gray-400" />
+                                    {item.status === 'confirmed' ? (
+                                      <User className="h-5 w-5 text-green-400" />
+                                    ) : (
+                                      <Clock className="h-5 w-5 text-yellow-400" />
+                                    )}
                                 </div>
-                                <span className="font-semibold">{user.name}</span>
+                                <span className="font-semibold">{item.name}</span>
+                                {item.status === 'pending' && <span className="ml-auto text-xs text-yellow-400 font-bold">Pendente</span>}
                             </div>
                         ))
-                    )}
-                    
-                    {!isLoading && participants && participants.length === 0 && (
-                        <p className="text-center text-gray-500 py-4">Nenhum participante encontrado (por enquanto!).</p>
+                    ) : (
+                        <p className="text-center text-gray-500 py-4">Nenhum participante ou convite pendente.</p>
                     )}
                 </div>
 
-                {/* Botão de fechar customizado */}
-                <Button onClick={() => setIsOpen(false)} variant="secondary" className="mt-4 w-full bg-yellow-500 hover:bg-gray-500">
+                <Button onClick={() => setIsOpen(false)} variant="secondary" className="mt-4 w-full">
                     <X className="h-4 w-4 mr-2" /> Fechar
                 </Button>
             </DialogContent>
