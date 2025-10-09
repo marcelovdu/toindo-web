@@ -16,7 +16,7 @@ const MeetingTypeList = () => {
       />
       <HomeCard
         img="/icons/schedule.svg"
-        title="Descobra os rolês na sua região."
+        title="Descubra os rolês na sua região."
         description="Saia e participe."
         className="bg-yellow-500"
         handleClick={() => router.push('/explore-events')}
