@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Collection from '@/components/Collection'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import { getServerSession } from 'next-auth/next'
 import { getEventsByUser, getRegisteredEvents } from '@/lib/actions/event.actions'
 import { SearchParamProps } from '@/types'
@@ -15,8 +15,9 @@ export default async function MyEventsPage({ searchParams }: SearchParamProps) {
     redirect('/api/auth/signin'); 
   }
 
-  const organizedPage = Number(searchParams?.organized_page) || 1;
-  const registeredPage = Number(searchParams?.registered_page) || 1;
+  const resolvedSearchParams = await searchParams;
+  const organizedPage = Number(resolvedSearchParams?.organized_page) || 1;
+  const registeredPage = Number(resolvedSearchParams?.registered_page) || 1;
 
   const organizedEvents = await getEventsByUser({ userId, page: organizedPage, limit: 6 });
   const registeredEvents = await getRegisteredEvents({ userId, page: registeredPage, limit: 6 });

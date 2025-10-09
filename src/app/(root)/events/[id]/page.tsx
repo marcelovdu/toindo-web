@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getEventById, getRelatedEventsByCategory } from '@/lib/actions/event.actions';
 import { SearchParamProps } from '@/types';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import Registration from "@/models/registration";
 import { OrganizerEventView } from '@/components/OrganizerEventView';
 import { VisitorEventView } from '@/components/VisitorEventView';
@@ -10,11 +10,15 @@ import { getEventRegistrationsAndInvitations, getInvitationsByEvent, getInvitati
 
 
 const EventDetailsPage = async ({ params, searchParams }: SearchParamProps) => {
-    const id = params.id;
-    const page = (Array.isArray(searchParams.page) 
-                    ? searchParams.page[0] 
-                    : searchParams.page) || '1';
-    const inviteToken = searchParams.invite_token as string;
+
+  const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  
+  const page = (Array.isArray(resolvedSearchParams.page) 
+                    ? resolvedSearchParams.page[0] 
+                    : resolvedSearchParams.page) || '1';
+  const inviteToken = resolvedSearchParams.invite_token as string;
+  
   
   // Busca todos os dados
   const eventPromise = getEventById(id);
@@ -34,9 +38,9 @@ const EventDetailsPage = async ({ params, searchParams }: SearchParamProps) => {
   const relatedEvents = await getRelatedEventsByCategory({
     categoryId: event.category._id,
     eventId: event._id,
-    page: (Array.isArray(searchParams.page) 
-            ? searchParams.page[0] 
-            : searchParams.page) || '1',
+    page: (Array.isArray(resolvedSearchParams.page) 
+            ? resolvedSearchParams.page[0] 
+            : resolvedSearchParams.page) || '1',
   }) || { data: [], totalPages: 0 };
 
 const invitationsResult = (isEventCreator && userId)
@@ -62,27 +66,35 @@ const invitationsResult = (isEventCreator && userId)
 
   const participantsList = await getEventRegistrationsAndInvitations(id);  
 
-  const viewProps = {
+  const organizerViewProps = {
     event,
     userId,
     isEventCreator,
     initialIsJoined,
     relatedEvents,
-    searchParams,
     invitations,
-    invitation,
-    inviteError,
     participantsList,
     page: page,
+  };
+
+  const visitorViewProps = {
+    event,
+    userId,
+    isEventCreator,
+    initialIsJoined,
+    relatedEvents,
+    searchParams: resolvedSearchParams,
+    invitation,
+    inviteError,
   };
 
   // Renderiza um componente ou outro
   return (
     <>
       {isEventCreator ? (
-        <OrganizerEventView {...viewProps} />
+        <OrganizerEventView {...organizerViewProps} />
       ) : (
-        <VisitorEventView {...viewProps} />
+        <VisitorEventView {...visitorViewProps} />
       )}
     </>
   )

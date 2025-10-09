@@ -1,17 +1,18 @@
 import EventForm from "@/components/EventForm";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getAllCategories } from "@/lib/actions/category.actions"; 
 import { getEventById } from "@/lib/actions/event.actions";
 
 type UpdateEventProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
-const UpdateEvent = async ({ params: { id } }: UpdateEventProps) => {
+const UpdateEvent = async ({ params }: UpdateEventProps) => {
+  const { id } = await params;
   // Busca a sessão e as categorias
   const session = await getServerSession(authOptions);
   const categories = await getAllCategories();
@@ -32,7 +33,7 @@ const UpdateEvent = async ({ params: { id } }: UpdateEventProps) => {
           type="Update"
           userId={userId}
           event={event}
-          eventId={event?._id}
+          eventId={event?._id.toString()}
           categories={categories || []}
         />
       </div>

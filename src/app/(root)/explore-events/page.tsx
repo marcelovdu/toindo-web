@@ -4,7 +4,7 @@ import Search from '@/components/Search';
 import { getAllEvents } from '@/lib/actions/event.actions';
 import { SearchParamProps } from '@/types';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 export default async function Home({ searchParams }: SearchParamProps) {
   const session = await getServerSession(authOptions);

@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react'
 import Sidebar from '@/components/Sidebar';
 
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 const RootLayout = async ({children}: {children: ReactNode}) => {
 
