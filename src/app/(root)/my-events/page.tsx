@@ -24,29 +24,31 @@ export default async function MyEventsPage({ searchParams }: SearchParamProps) {
   
   return (
     <>
-      <section className="bg-primary-50 bg-dotted-pattern bg-cover bg-center -mt-10 md:py-10">
-        <div className="wrapper flex items-center justify-center sm:justify-between">
-          <h1 className="text-center text-3xl font-bold text-white sm:text-left">Meus Eventos</h1>
+      <section className="bg-primary-50 bg-dotted-pattern bg-cover bg-center -mt-10 py-8 sm:py-10 md:py-12">
+        <div className="wrapper px-4 sm:px-6 lg:px-8 flex items-center justify-center sm:justify-between">
+          <h1 className="text-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white sm:text-left">
+            Meus Eventos
+          </h1>
         </div>
       </section>
 
-      <section className="wrapper -mt-12 py-8 md:py-12">
-        <Tabs defaultValue="organizando" className="w-full">
+      <section className="wrapper px-4 sm:px-6 lg:px-8 -mt-12 py-8 md:py-12">
+        <Tabs defaultValue="organizando" className="w-full max-w-6xl mx-auto">
           
-          <TabsList className="flex w-full rounded-xl bg-gray-800 p-1">
+          <TabsList className="flex w-full rounded-xl bg-gray-800 p-1 h-auto">
             <TabsTrigger 
               value="organizando" 
-              className="w-full rounded-lg py-4 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-sm">
+              className="w-full rounded-lg py-3 sm:py-4 text-xs sm:text-sm md:text-base font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-sm">
               Organizando
             </TabsTrigger>
             <TabsTrigger 
               value="participando"
-              className="w-full rounded-lg py-4 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-sm">
+              className="w-full rounded-lg py-3 sm:py-4 text-xs sm:text-sm md:text-base font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=active]:shadow-sm">
               Participando
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="organizando" className="mt-8">
+          <TabsContent value="organizando" className="mt-6 sm:mt-8">
             <Collection 
               data={organizedEvents?.data}
               emptyTitle="Você não organizou nenhum evento ainda"
@@ -60,7 +62,7 @@ export default async function MyEventsPage({ searchParams }: SearchParamProps) {
             />
           </TabsContent>
 
-          <TabsContent value="participando" className="mt-8">
+          <TabsContent value="participando" className="mt-6 sm:mt-8">
             <Collection 
               data={registeredEvents?.data}
               emptyTitle="Nenhuma inscrição encontrada"

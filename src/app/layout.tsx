@@ -30,14 +30,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-dark-2 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-dark-2 antialiased min-h-screen`}
       >
-        <Navbar/>
-        < Toaster />
+        <div className="sticky top-0 z-50">
+          <Navbar/>
+        </div>
+        <Toaster />
         <AuthProvider>
-        {children}
+          <div className="min-h-screen">
+            {children}
+          </div>
         </AuthProvider>
       </body>
     </html>

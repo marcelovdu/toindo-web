@@ -18,10 +18,12 @@ const CreateEvent = async () => {
 
   return (
     <>
-    <div className="wrapper my-8">
-        <EventForm userId={userId} type="Create" categories={categories || []} />
+      <div className="wrapper px-4 sm:px-6 lg:px-8 my-6 sm:my-8 md:my-12">
+        <div className="max-w-4xl mx-auto">
+          <EventForm userId={userId} type="Create" categories={categories || []} />
+        </div>
       </div>
-   </>
+    </>
   )
 }
 

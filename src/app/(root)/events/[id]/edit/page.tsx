@@ -28,14 +28,16 @@ const UpdateEvent = async ({ params }: UpdateEventProps) => {
 
   return (
     <>
-      <div className="wrapper my-8">
-        <EventForm
-          type="Update"
-          userId={userId}
-          event={event}
-          eventId={event?._id.toString()}
-          categories={categories || []}
-        />
+      <div className="wrapper px-4 sm:px-6 lg:px-8 my-6 sm:my-8 md:my-12">
+        <div className="max-w-4xl mx-auto">
+          <EventForm
+            type="Update"
+            userId={userId}
+            event={event}
+            eventId={event?._id.toString()}
+            categories={categories || []}
+          />
+        </div>
       </div>
     </>
   );

@@ -25,12 +25,18 @@ export default async function Home({ searchParams }: SearchParamProps) {
 
   return (
     <>
-      <section id="events" className="wrapper my-0 flex flex-col gap-8 md:gap-12">
-        <h1 className="text-3xl font-bold text-white">Eventos Disponíveis</h1>
+      <section id="events" className="wrapper my-0 px-4 sm:px-6 lg:px-8 flex flex-col gap-6 sm:gap-8 md:gap-12">
+        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white text-center sm:text-left">
+          Eventos Disponíveis
+        </h1>
 
-        <div className="flex w-full flex-col gap-5 md:flex-row">
-          <Search />
-          <CategoryFilter />
+        <div className="flex w-full flex-col gap-4 sm:gap-5 lg:flex-row">
+          <div className="w-full lg:flex-1">
+            <Search />
+          </div>
+          <div className="w-full lg:w-auto lg:min-w-[200px]">
+            <CategoryFilter />
+          </div>
         </div>
 
         <Collection 
