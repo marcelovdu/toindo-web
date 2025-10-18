@@ -102,7 +102,7 @@ const SignIn = () => {
           <div className="flex my-3 sm:my-4 md:my-6 justify-center gap-3 sm:gap-4 md:gap-6 mx-auto items-center">
             <Button
               disabled={false}
-             onClick={(e) => handleProvider(e, "google")} 
+              onClick={(e) => handleProvider(e, "google")} 
               variant="outline"
               size="lg"
               className="bg-slate-300 hover:bg-slate-400 hover:scale-110 transition-transform duration-200 p-2 sm:p-2.5 md:p-3"

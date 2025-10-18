@@ -30,6 +30,8 @@ import { defaultEventImageUrl } from '@/constants';
 import { IEvent } from "@/models/event"
 import { ICategory } from '@/models/category'; 
 import { createEvent, updateEvent } from '@/lib/actions/event.actions';
+import { LocationAutocomplete } from '@/components/LocationAutocompleteSimple';
+import { LocationData } from '@/lib/validator';
 
 // Lista de categorias
 const iconMap: { [key: string]: React.ElementType } = {
@@ -68,7 +70,8 @@ const initialValues = type === 'Update' && event
   ? { 
       ...event, 
       startDateTime: new Date(event.startDateTime),
-      category: event.category._id 
+      category: event.category._id,
+      locationData: event.locationData || null
     }
   : { // Valores padrão para o modo 'Create'
       title: "",
@@ -76,6 +79,7 @@ const initialValues = type === 'Update' && event
       description: "",
       startDateTime: undefined,
       location: "",
+      locationData: null,
       price: "",
       isFree: true,
       capacity: 10,
@@ -106,11 +110,23 @@ const form = useForm<z.infer<typeof eventFormSchema>>({
       case 1: fieldsToValidate = ['title']; break;
       case 2: fieldsToValidate = ['category']; break;
       case 3: fieldsToValidate = ['description']; break;
-      case 4: fieldsToValidate = ['startDateTime', 'location']; break;
+      case 4: fieldsToValidate = ['startDateTime']; break;
       case 5: fieldsToValidate = ['price', 'isFree', 'capacity', 'imageUrl']; break;
     }
 
     const isValid = await form.trigger(fieldsToValidate);
+
+    // Validação customizada para step 4 (localização)
+    if (currentStep === 4) {
+      const locationData = form.getValues('locationData');
+      if (!locationData || !locationData.address) {
+        form.setError('locationData', { 
+          type: 'required', 
+          message: 'A localização é obrigatória.' 
+        });
+        return;
+      }
+    }
 
     if (isValid) {
       const currentValues = form.getValues();
@@ -139,7 +155,8 @@ const handleSubmitFinal = async () => {
   const eventDataToSend = {
     ...finalData,
     description: finalData.description ?? '',
-    location: finalData.location ?? '',
+    location: finalData.locationData?.address || finalData.location || '',
+    locationData: finalData.locationData || undefined,
     price: finalData.price ?? '0',
     imageUrl: finalData.imageUrl || defaultEventImageUrl,
   };
@@ -356,19 +373,17 @@ case 4:
         {/* === Campo de Localização === */}
         <FormField
           control={form.control}
-          name="location"
+          name="locationData"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs sm:text-sm font-medium mb-2 block">Localização</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                  <Input
-                    placeholder="Endereço do evento"
-                    {...field}
-                    className="pl-8 sm:pl-10 text-xs sm:text-sm md:text-base h-9 sm:h-10 md:h-12"
-                  />
-                </div>
+                <LocationAutocomplete
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Digite o endereço do evento"
+                  className="text-xs sm:text-sm md:text-base h-9 sm:h-10 md:h-12"
+                />
               </FormControl>
               <FormMessage className="pt-1" />
             </FormItem>

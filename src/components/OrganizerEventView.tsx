@@ -82,10 +82,29 @@ export const OrganizerEventView = ({
                       <p className="text-sm text-gray-300">{formatFullDateTime(event.startDateTime)}</p>
                   </div>
                   {/* Bloco de Localização */}
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location || '')}`} target="_blank" rel="noopener noreferrer" className="bg-gray-800 p-4 rounded-lg space-y-2 border border-gray-700 hover:border-yellow-500 transition-colors flex flex-col">
+                  <a 
+                    href={
+                      event.locationData?.placeId 
+                        ? `https://www.google.com/maps/place/?q=place_id:${event.locationData.placeId}`
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location || '')}`
+                    } 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="bg-gray-800 p-4 rounded-lg space-y-2 border border-gray-700 hover:border-yellow-500 transition-colors flex flex-col"
+                  >
                       <MapPin className="h-8 w-8 text-yellow-500" />
                       <h4 className="font-bold text-white flex items-center gap-1.5">Localização <ExternalLink className="h-3 w-3" /></h4>
-                      <p className="text-sm text-gray-300">{event.location || 'Online'}</p>
+                      <p className="text-sm text-gray-300">
+                        {event.locationData?.address || event.location || 'Online'}
+                      </p>
+                      {event.locationData?.addressComponents && (
+                        <p className="text-xs text-gray-400">
+                          {[
+                            event.locationData.addressComponents.city,
+                            event.locationData.addressComponents.state
+                          ].filter(Boolean).join(', ')}
+                        </p>
+                      )}
                   </a>
                   {/* Bloco de Custo */}
                   <div className="bg-gray-800 p-4 rounded-lg space-y-2 border border-gray-700 flex flex-col">
